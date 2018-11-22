@@ -40,6 +40,7 @@ public class ServerCore {
     static final CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
 
     public static String read(SelectionKey key) {
+        if(!key.isValid()) return null;
         SocketChannel sc = (SocketChannel) key.channel();
         ByteBuffer readBuffer = ByteBuffer.allocate(1024);
         readBuffer.clear();
@@ -61,14 +62,13 @@ public class ServerCore {
             return msg;
         } catch (IOException e) {
             // System.out.println("ServerCore.read IO异常,返回空");
-            // e.printStackTrace();
             removeConnection(key);
             return null;
         }
-
     }
 
-    public static boolean write(SelectionKey clientKey, String msg) {
+    public static boolean write(SelectionKey key, String msg) {
+        if(!key.isValid()) return false;
         CharBuffer charBuffer = CharBuffer.allocate(1024);
         ByteBuffer writeBuffer = ByteBuffer.allocate(1024);
         charBuffer.clear();
@@ -82,11 +82,11 @@ public class ServerCore {
         }
         try {
             while (writeBuffer.position() < writeBuffer.limit()) {
-                ((SocketChannel) clientKey.channel()).write(writeBuffer);
+                ((SocketChannel) key.channel()).write(writeBuffer);
             }
         } catch (IOException e) {
             System.out.println("ServerCore.write IO异常");
-            removeConnection(clientKey);
+            removeConnection(key);
             return false;
         }
         return true;
@@ -125,7 +125,6 @@ public class ServerCore {
         try {
             sc = ((ServerSocketChannel) serverKey.channel()).accept();
             Server.es2.execute(new AuthHandle(sc));
-            // Server.console.flush();
             System.out.println("\r\n" + sc.toString().replace("java.nio.channels.SocketChannel", "") + "准备接入!");
         } catch (IOException e) {
             System.out.println("接受连接异常!");
@@ -192,12 +191,12 @@ public class ServerCore {
      * @return String 字符串hash后的值,如果传入的hash算法不被支持则返回null
      */
     public static String hash(String string, String algorithm) {
+        if (algorithm != "MD5" && algorithm != "SHA-1" && algorithm != "SHA-256") return null;
         final char[] HEX = "0123456789abcdef".toCharArray();
         MessageDigest md = null;
         try {
             md = MessageDigest.getInstance(algorithm);
         } catch (NoSuchAlgorithmException e) {
-            System.out.println("不能识别的Hash算法");
             return null;
         }
         byte[] temp = md.digest(string.getBytes());
@@ -210,11 +209,11 @@ public class ServerCore {
     }
 
     public static ByteBuffer Hash(String string, String algorithm) {
+        if (algorithm != "MD5" && algorithm != "SHA-1" && algorithm != "SHA-256") return null;
         MessageDigest md;
         try {
             md = MessageDigest.getInstance(algorithm);
         } catch (NoSuchAlgorithmException e) {
-            System.out.println("不能识别的Hash算法");
             return null;
         }
         byte[] array = md.digest(string.getBytes(Charset.forName("UTF-8")));

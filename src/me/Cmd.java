@@ -1,14 +1,10 @@
 package me;
 
-//import java.io.BufferedReader;
-//import java.io.Console;
-//import java.io.IOException;
-//import java.io.InputStreamReader;
+import java.io.Console;
 
 public class Cmd implements Runnable {
 
-    // private InputStreamReader input = new InputStreamReader(System.in);
-    // private BufferedReader br = new BufferedReader(input);
+    private Console console = System.console();
 
     @Override
     public void run() {
@@ -16,7 +12,7 @@ public class Cmd implements Runnable {
             try {
                 // System.out.print("> ");
                 // String cmd = br.readLine();
-                String cmd = Server.console.readLine("> ");
+                String cmd = this.console.readLine("> ");
                 cmdHandle(cmd);
                 Thread.sleep(1);
             } catch (InterruptedException e) {

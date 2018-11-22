@@ -6,6 +6,8 @@ public class ReadHandle implements Runnable {
 
     private String msg = null;
     private SelectionKey clientKey;
+    private final String[] COLOR = { "§4", "§c", "§6", "§e", "§2", "§a", "§b", "§3", "§1", "§9", "§d", "§5", "§f", "§7",
+            "§8", "§0", "§l", "§n", "§o", "§k", "§m", "§r" };
 
     @Override
     public void run() {
@@ -34,8 +36,14 @@ public class ReadHandle implements Runnable {
     }
 
     private void forward() {
-        // String temp = msg;
-        System.out.println(msg);
         Server.writeQueue.offer(msg);
+        System.out.println(filterColor(msg));
+    }
+    
+    private String filterColor(String msg) {
+        for (int i = 0; i < COLOR.length; i++) {
+            msg = msg.replace(COLOR[i], "");
+        }
+        return msg;
     }
 }

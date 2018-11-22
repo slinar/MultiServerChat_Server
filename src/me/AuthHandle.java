@@ -5,6 +5,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketException;
+import java.nio.channels.ClosedChannelException;
+import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.util.concurrent.ExecutorService;
@@ -23,8 +25,7 @@ public class AuthHandle implements Runnable {
 
     @Override
     public void run() {
-        // long startTime = System.currentTimeMillis();
-        Socket socket = sc.socket();
+        Socket socket = this.sc.socket();
         try {
             socket.setSoTimeout(1500);
         } catch (SocketException e1) {
@@ -41,24 +42,37 @@ public class AuthHandle implements Runnable {
             String s = new String(b, Charset.forName("UTF-8"));
             if (s.equals(hashcode)) {
                 out.write("OK".getBytes("UTF-8"));
-                Server.finishConn.add(this.sc);
+                finishConn();
             } else {
-                System.out.println(sc.getRemoteAddress() + " hashcode不一致关闭客户端连接,认证失败");
+                System.out.println(this.sc.getRemoteAddress() + " hashcode不一致关闭客户端连接,认证失败");
                 close();
             }
         } catch (IOException e) {
             System.out.println("认证时IO异常关闭客户端连接");
             close();
         }
-        // System.out.println("认证耗时：" + (System.currentTimeMillis() - startTime) +
-        // "ms");
     }
 
-    void close() {
+    private void close() {
         try {
-            sc.close();
+            this.sc.close();
+        } catch (IOException e) {}
+    }
+    
+    private void finishConn() {
+        try {
+            this.sc.configureBlocking(false);
         } catch (IOException e) {
-
+            System.out.println("配置阻塞模式异常");
+        }
+        SelectionKey clientKey;
+        try {
+            clientKey = this.sc.register(Server.selector.wakeup(), SelectionKey.OP_READ);
+            clientKey.attach(System.currentTimeMillis());
+            Server.clients.add(clientKey);
+            System.out.println(ServerCore.getLink(clientKey) + "已连接");
+        } catch (ClosedChannelException e) {
+            System.out.println("已关闭的通道异常");
         }
     }
 }

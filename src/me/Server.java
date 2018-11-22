@@ -1,12 +1,10 @@
 package me;
 
-import java.io.Console;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
 import java.security.KeyPair;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
@@ -17,13 +15,12 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import javax.crypto.SecretKey;
-
 public class Server {
 
-    // 创建一个线程池，异步任务要用到
+    // 创建一个线程池,异步任务要用到
     private static ExecutorService es = Executors.newFixedThreadPool(5);
-
+    
+    // 创建一个线程池,客户端认证专用
     static ExecutorService es2 = Executors.newCachedThreadPool();
 
     // 创建一个选择器,用来从ServerSocketChannel通道中挑选出代接受的连接
@@ -31,8 +28,6 @@ public class Server {
 
     // 定义一个超时集合,存放当前已连接SocketChannel对应的clientKey
     static Set<SelectionKey> clients = new CopyOnWriteArraySet<SelectionKey>();
-
-    static Set<SocketChannel> finishConn = new CopyOnWriteArraySet<SocketChannel>();
 
     // 定义一个队列,存放已经准备好读的clientKey
     static Queue<SelectionKey> readQueue = new ConcurrentLinkedQueue<SelectionKey>();
@@ -42,20 +37,21 @@ public class Server {
 
     // 自定义心跳信息
     static final String heat = "_ACTIVE_";
-
+    
+    // 客户端连接服务端的密码
     static String pwd;
-
+    
+    // 服务端启动参数
     static String[] _args;
-
+    
+    // 服务端绑定的地址和端口
     static InetSocketAddress addr;
 
-    static SecretKey aesKey;
-
+    // 服务端公钥
     static RSAPublicKey publicKey;
-
+    
+    // 服务端私钥
     static RSAPrivateKey privateKey;
-
-    static Console console = System.console();
 
     public static void main(String[] args) throws IOException, InterruptedException {
         _args = args;
@@ -84,8 +80,6 @@ public class Server {
 
         // ssc注册到选择器,关心的事件为接受连接
         ssc.register(selector, SelectionKey.OP_ACCEPT);
-
-        aesKey = ServerCore.aesKg();
         KeyPair kp = ServerCore.rsaKpg();
         publicKey = (RSAPublicKey) kp.getPublic();
         privateKey = (RSAPrivateKey) kp.getPrivate();
